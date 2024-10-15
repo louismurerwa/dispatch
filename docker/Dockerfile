@@ -89,7 +89,8 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc
     && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
 COPY --from=sdist /dist/*.whl /tmp/dist/
-RUN apt-get update && apt-get install -y g++ gcc libxslt-dev
+RUN apt-get update && apt-get install -y g++ gcc libxslt-dev && apt-get install -y libpq-dev
+
 RUN buildDeps="" \
     && apt-get update \
     && apt-get install -y --no-install-recommends "$buildDeps" \
