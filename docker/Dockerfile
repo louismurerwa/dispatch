@@ -56,11 +56,6 @@ RUN YARN_CACHE_FOLDER="$(mktemp -d)" \
     && rm -r "$YARN_CACHE_FOLDER" \
     && mv /usr/src/dispatch/dist /dist
 
-RUN apk add --no-cache --virtual .build-deps gcc libc-dev libxslt-dev && \
-    apk add --no-cache libxslt && \
-    pip install --no-cache-dir lxml>=3.5.0 && \
-    apk del .build-deps
-
 # This is the image to be run
 FROM python:3.13.0-slim-bullseye
 
@@ -94,6 +89,7 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc
     && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
 COPY --from=sdist /dist/*.whl /tmp/dist/
+RUN apt-get update && apt-get install -y g++ gcc libxslt-dev
 RUN buildDeps="" \
     && apt-get update \
     && apt-get install -y --no-install-recommends "$buildDeps" \
