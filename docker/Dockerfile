@@ -17,14 +17,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    wget \
-    gnupg \
-    python3-distutils \
-    python3-setuptools \
-    && rm -rf /var/lib/apt/lists/*
-
 RUN wget --quiet -O - https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs --no-install-recommends
 
@@ -94,11 +86,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-
-# Add Node.js 18 LTS "Hydrogen" repository and install Node.js
-RUN wget --quiet -O - https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=sdist /dist/*.whl /tmp/dist/
 RUN buildDeps="" \
