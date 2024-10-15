@@ -90,6 +90,7 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc
 RUN wget --quiet -O - https://deb.nodesource.com/setup_12.x | bash -
 
 COPY --from=sdist /dist/*.whl /tmp/dist/
+RUN apt-get update && apt-get install -y python3-setuptools
 RUN buildDeps="" \
     && apt-get update \
     && apt-get install -y --no-install-recommends "$buildDeps" \
