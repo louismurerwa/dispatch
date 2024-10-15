@@ -51,7 +51,6 @@ COPY . /usr/src/dispatch/
 RUN YARN_CACHE_FOLDER="$(mktemp -d)" \
     && export YARN_CACHE_FOLDER \
     && pushd /usr/src/dispatch \
-    && pip install setuptools \
     && python setup.py bdist_wheel \
     && rm -r "$YARN_CACHE_FOLDER" \
     && mv /usr/src/dispatch/dist /dist
@@ -88,9 +87,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
-COPY --from=sdist /dist/*.whl /tmp/dist/
-RUN apt-get update && apt-get install -y g++ gcc libxslt-dev && apt-get install -y libpq-dev
+RUN wget --quiet -O - https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get install -y nodejs --no-install-recommends
 
+COPY --from=sdist /dist/*.whl /tmp/dist/
 RUN buildDeps="" \
     && apt-get update \
     && apt-get install -y --no-install-recommends "$buildDeps" \
