@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2-dev \
     libxslt-dev \
     gcc \
+    g++\
     libc-dev \
     libpq-dev \
     python3-setuptools \
@@ -92,6 +93,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2-dev \
     libxslt-dev \
     gcc \
+    g++\
     libc-dev \
     libpq-dev \
     python3-setuptools \
