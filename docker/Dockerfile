@@ -1,4 +1,4 @@
-FROM python:3.13.0-slim-bullseye as sdist
+FROM python:3.11-slim-bullseye as sdist
 
 LABEL maintainer="oss@netflix.com"
 LABEL org.opencontainers.image.title="Dispatch PyPI Wheel"
@@ -48,6 +48,7 @@ ARG VITE_DISPATCH_COMMIT_MESSAGE
 ENV VITE_DISPATCH_COMMIT_MESSAGE="Unknown"
 
 COPY . /usr/src/dispatch/
+RUN pip install --no-cache-dir setuptools
 RUN YARN_CACHE_FOLDER="$(mktemp -d)" \
     && export YARN_CACHE_FOLDER \
     && pushd /usr/src/dispatch \
@@ -56,7 +57,7 @@ RUN YARN_CACHE_FOLDER="$(mktemp -d)" \
     && mv /usr/src/dispatch/dist /dist
 
 # This is the image to be run
-FROM python:3.13.0-slim-bullseye
+FROM python:3.11-slim-bullseye
 
 LABEL maintainer="oss@dispatch.io"
 LABEL org.opencontainers.image.title="Dispatch"
