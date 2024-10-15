@@ -17,6 +17,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    wget \
+    gnupg \
+    python3-distutils \
+    python3-setuptools \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN wget --quiet -O - https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs --no-install-recommends
 
