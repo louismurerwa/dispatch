@@ -56,6 +56,11 @@ RUN YARN_CACHE_FOLDER="$(mktemp -d)" \
     && rm -r "$YARN_CACHE_FOLDER" \
     && mv /usr/src/dispatch/dist /dist
 
+RUN apk add --no-cache --virtual .build-deps gcc libc-dev libxslt-dev && \
+    apk add --no-cache libxslt && \
+    pip install --no-cache-dir lxml>=3.5.0 && \
+    apk del .build-deps
+
 # This is the image to be run
 FROM python:3.13.0-slim-bullseye
 
