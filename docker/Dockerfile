@@ -48,6 +48,7 @@ ARG VITE_DISPATCH_COMMIT_MESSAGE
 ENV VITE_DISPATCH_COMMIT_MESSAGE="Unknown"
 
 COPY . /usr/src/dispatch/
+RUN apt-get update && apt-get install -y python3-setuptools
 RUN YARN_CACHE_FOLDER="$(mktemp -d)" \
     && export YARN_CACHE_FOLDER \
     && pushd /usr/src/dispatch \
