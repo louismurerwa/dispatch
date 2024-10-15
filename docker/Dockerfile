@@ -1,3 +1,4 @@
+# Use a base image with Python
 FROM python:3.13.0-slim-bullseye as sdist
 
 LABEL maintainer="oss@netflix.com"
@@ -15,6 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Needed for fetching stuff
     ca-certificates \
     wget \
+    python3-distutils \
+    python3-setuptools \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget --quiet -O - https://deb.nodesource.com/setup_16.x | bash - \
@@ -82,6 +85,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Needed for fetching stuff
     ca-certificates \
     wget gnupg \
+    python3-distutils \
+    python3-setuptools \
     && rm -rf /var/lib/apt/lists/*
 
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
