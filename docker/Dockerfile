@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bullseye as sdist
+FROM python:3.13.0-slim-bullseye as sdist
 
 LABEL maintainer="oss@netflix.com"
 LABEL org.opencontainers.image.title="Dispatch PyPI Wheel"
@@ -10,29 +10,15 @@ LABEL org.opencontainers.image.authors="oss@netflix.com"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-o", "errexit", "-c"]
 
-# Install build dependencies
+# Get and set up Node for front-end asset building
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    g++ \
-    gfortran \
-    libatlas-base-dev \
-    libopenblas-dev \
-    pkg-config \
-    wget \
+    # Needed for fetching stuff
     ca-certificates \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Set up Node.js
 RUN wget --quiet -O - https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs --no-install-recommends
-
-# Set environment variables
-ENV MAKEFLAGS="-j$(nproc)"
-ENV DISPATCH_CONF=/etc/dispatch
-
-# Upgrade pip and install wheel
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 ARG SOURCE_COMMIT
 ENV DISPATCH_BUILD=${SOURCE_COMMIT:-unknown}
@@ -65,13 +51,12 @@ COPY . /usr/src/dispatch/
 RUN YARN_CACHE_FOLDER="$(mktemp -d)" \
     && export YARN_CACHE_FOLDER \
     && pushd /usr/src/dispatch \
-    && pip install --no-cache-dir -e .\
     && python setup.py bdist_wheel \
     && rm -r "$YARN_CACHE_FOLDER" \
     && mv /usr/src/dispatch/dist /dist
 
 # This is the image to be run
-FROM python:3.11-slim-bullseye
+FROM python:3.13.0-slim-bullseye
 
 LABEL maintainer="oss@dispatch.io"
 LABEL org.opencontainers.image.title="Dispatch"
@@ -87,21 +72,39 @@ SHELL ["/bin/bash", "-o", "pipefail", "-o", "errexit", "-c"]
 # add our user and group first to make sure their IDs get assigned consistently
 RUN groupadd -r dispatch && useradd -r -m -g dispatch dispatch
 
-# Install runtime dependencies
+# Sane defaults for pip
+ENV PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    # Dispatch config params
+    DISPATCH_CONF=/etc/dispatch
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
-    nodejs \
+    # Needed for fetching stuff
+    ca-certificates \
+    wget gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the built wheel from the sdist stage
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+
+RUN wget --quiet -O - https://deb.nodesource.com/setup_12.x | bash -
+
 COPY --from=sdist /dist/*.whl /tmp/dist/
-
-# Install the wheel
-RUN pip install --no-cache-dir /tmp/dist/*.whl \
-    && rm -rf /tmp/dist
-
-# Install mjml
-RUN npm install -g mjml --no-cache
+RUN buildDeps="" \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends "$buildDeps" \
+    # remove internal index when internal plugins are separated
+    && pip install -U /tmp/dist/*.whl \
+    && apt-get purge -y --auto-remove "$buildDeps" \
+    # We install run-time dependencies strictly after
+    # build dependencies to prevent accidental collusion.
+    # These are also installed last as they are needed
+    # during container run and can have the same deps w/
+    && apt-get install -y --no-install-recommends \
+    pkg-config postgresql-client-14 nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install mjml --no-cache-dir
 
 EXPOSE 8000
 VOLUME /var/lib/dispatch/files
