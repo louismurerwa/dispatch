@@ -15,6 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Needed for fetching stuff
     ca-certificates \
     wget \
+    libxml2-dev \
+    libxslt-dev \
+    gcc \
+    libc-dev \
+    libpq-dev \
+    python3-setuptools \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget --quiet -O - https://deb.nodesource.com/setup_16.x | bash - \
