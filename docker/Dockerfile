@@ -65,7 +65,7 @@ COPY . /usr/src/dispatch/
 RUN YARN_CACHE_FOLDER="$(mktemp -d)" \
     && export YARN_CACHE_FOLDER \
     && pushd /usr/src/dispatch \
-    && pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir -e .
     && python setup.py bdist_wheel \
     && rm -r "$YARN_CACHE_FOLDER" \
     && mv /usr/src/dispatch/dist /dist
