@@ -1,4 +1,3 @@
-# Use a base image with Python
 FROM python:3.13.0-slim-bullseye as sdist
 
 LABEL maintainer="oss@netflix.com"
@@ -13,11 +12,9 @@ SHELL ["/bin/bash", "-o", "pipefail", "-o", "errexit", "-c"]
 
 # Get and set up Node for front-end asset building
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Needed for fetching stuff
     ca-certificates \
     wget \
-    python3-distutils \
-    python3-setuptools \
-    python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget --quiet -O - https://deb.nodesource.com/setup_16.x | bash - \
@@ -43,6 +40,7 @@ ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_APP_KEY
 ARG VITE_SENTRY_ENABLED
 
+# Should be replaced in your build process script
 ARG VITE_DISPATCH_COMMIT_HASH
 ENV VITE_DISPATCH_COMMIT_HASH="Unknown"
 
@@ -50,8 +48,7 @@ ARG VITE_DISPATCH_COMMIT_MESSAGE
 ENV VITE_DISPATCH_COMMIT_MESSAGE="Unknown"
 
 COPY . /usr/src/dispatch/
-RUN pip install --upgrade pip setuptools wheel \
-    && YARN_CACHE_FOLDER="$(mktemp -d)" \
+RUN YARN_CACHE_FOLDER="$(mktemp -d)" \
     && export YARN_CACHE_FOLDER \
     && pushd /usr/src/dispatch \
     && python setup.py bdist_wheel \
@@ -72,20 +69,20 @@ LABEL org.opencontainers.image.authors="oss@netflix.com"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-o", "errexit", "-c"]
 
+# add our user and group first to make sure their IDs get assigned consistently
 RUN groupadd -r dispatch && useradd -r -m -g dispatch dispatch
 
+# Sane defaults for pip
 ENV PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    # Dispatch config params
     DISPATCH_CONF=/etc/dispatch
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Needed for fetching stuff
     ca-certificates \
     wget gnupg \
-    python3-distutils \
-    python3-setuptools \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install --upgrade pip setuptools wheel
+    && rm -rf /var/lib/apt/lists/*
 
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
@@ -94,8 +91,13 @@ COPY --from=sdist /dist/*.whl /tmp/dist/
 RUN buildDeps="" \
     && apt-get update \
     && apt-get install -y --no-install-recommends "$buildDeps" \
+    # remove internal index when internal plugins are separated
     && pip install -U /tmp/dist/*.whl \
     && apt-get purge -y --auto-remove "$buildDeps" \
+    # We install run-time dependencies strictly after
+    # build dependencies to prevent accidental collusion.
+    # These are also installed last as they are needed
+    # during container run and can have the same deps w/
     && apt-get install -y --no-install-recommends \
     pkg-config postgresql-client-14 nodejs \
     && apt-get clean \
