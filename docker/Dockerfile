@@ -89,6 +89,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Needed for fetching stuff
     ca-certificates \
     wget gnupg \
+    libxml2-dev \
+    libxslt-dev \
+    gcc \
+    libc-dev \
+    libpq-dev \
+    python3-setuptools \
+    wget gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
